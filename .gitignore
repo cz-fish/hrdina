@@ -1,0 +1,4 @@
+.*.sw?
+*~
+Hrdina/build/
+Hrdina/dist/
