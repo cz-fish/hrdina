@@ -173,18 +173,18 @@ def main():
 
 	if text_output_file == None or text_output_file == '-':
 		if binary_output_file != None:
-			print("Writing data to standard output")
+			print("Writing data to standard output", file=sys.stderr)
 			dump_tree_python(tree, frequencies, total_letters, sys.stdout)
 		else:
-			print("Skipping text output")
+			print("Skipping text output", file=sys.stderr)
 	else:
-		print("Writing data to text file", text_output_file)
+		print("Writing data to text file", text_output_file, file=sys.stderr)
 		f = open(text_output_file, 'wt')
 		dump_tree_python(tree, frequencies, total_letters, f)
 		f.close()
 	
 	if binary_output_file != None:
-		print("Writing data to binary file", binary_output_file)
+		print("Writing data to binary file", binary_output_file, file=sys.stderr)
 		f = open(binary_output_file, 'wb')
 		dump_tree_binary(tree, frequencies, total_letters, f)
 		f.close()
