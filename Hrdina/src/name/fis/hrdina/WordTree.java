@@ -57,21 +57,23 @@ public class WordTree {
 			IsValidWord = false;
 		}
 	}
+	
 	// </editor-fold>
 
 	// <editor-fold desc="Private members">
 	// All nodes of the tree. The root node is the 0th element
 	private List<Node> m_Nodes;
-	// Absolute frequency of each distinct letter
-	private Map<Character, Integer> m_LetterFreq;
-	// Number of letters in all words in the word tree in total
-	// (Used to calculate relative frequency of each letter)
-	private int m_TotalLetters;
+	private Alphabet m_Alphabet;
 	// </editor-fold>
 
 	public WordTree() {
 		m_Nodes = null;
-		m_LetterFreq = null;
+		m_Alphabet = null;
+	}
+	
+	public Alphabet getAlphabet()
+	{
+		return m_Alphabet;
 	}
 
 	public boolean LoadTree(FileInputStream fstr) throws IOException, WordTreeException {
@@ -82,9 +84,9 @@ public class WordTree {
 		}
 
 		// Unpack alphabet / letter frequencies
-		m_LetterFreq = new TreeMap<>();
+		Map<Character, Integer> letterFreq = new TreeMap<>();
 		int distinctLetters;
-		m_TotalLetters = ReadLEInt(fstr);
+		int totalLetters = ReadLEInt(fstr);
 		distinctLetters = ReadLEInt(fstr);
 
 		byte[] letterData = new byte[distinctLetters * 4];
@@ -98,8 +100,10 @@ public class WordTree {
 		ByteBuffer.wrap(counterData).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(frequencies);
 
 		for (int i = 0; i < distinctLetters; i++) {
-			m_LetterFreq.put(letters[i], frequencies[i]);
+			letterFreq.put(letters[i], frequencies[i]);
 		}
+		
+		m_Alphabet = new Alphabet(totalLetters, letterFreq);
 
 		// Unpack nodes
 		byte[] nodeData = new byte[fstr.available()];

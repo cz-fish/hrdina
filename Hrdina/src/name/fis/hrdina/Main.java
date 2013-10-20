@@ -1,5 +1,6 @@
 package name.fis.hrdina;
 import java.io.*;
+import java.util.List;
 
 public class Main {
 
@@ -35,12 +36,23 @@ public class Main {
 		}
 		
 		// Test
-		TestWord(tree, "srp");
+/*		TestWord(tree, "srp");
 		TestWord(tree, "srpen");
 		TestWord(tree, "padrť");
 		TestWord(tree, "lžíce");
 		TestWord(tree, "oj");
-		TestWord(tree, "křpch");
+		TestWord(tree, "křpch"); */
+		
+		GameBoard board = new GameBoard();
+		board.Init(tree);
+		board.DumpBoard();
+		List<String> solutions = board.SolveBoard();
+		System.out.println("--------");
+		System.out.println(String.format("Found %d solutions", solutions.size()));
+		for (String s: solutions)
+		{
+			System.out.println(s);
+		}
 		
 		if (fstr != null)
 		{
