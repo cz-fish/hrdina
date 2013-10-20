@@ -87,17 +87,69 @@ def tidy_tree(tree):
 	return new_tree
 
 
-def dump_tree(tree, frequencies):
-	"""Prints the results to the output in python dictionary/list format.
+def dump_tree_python(tree, frequencies, total_letters, f):
+	"""Prints the results to the output file in python dictionary/list format.
 	Nothing clever here."""
-	print(str(frequencies))
-	print(str(tree))
+	print(str(total_letters), file=f)
+	print(str(frequencies), file=f)
+	print(str(tree), file=f)
+
+
+def dump_tree_binary(tree, frequencies, total_letters, f):
+	"""Stores the tree in a compact binary format"""
+	from array import array
+
+	distinct_letters = len(frequencies)
+	if distinct_letters > 128:
+		raise ValueError("Too many distinct letters ({}). At most 128 are supported".format(distinct_letters))
+	if len(tree) > 2**24:
+		raise ValueError("Too many tree nodes ({}). At most 2^24 are supported".format(len(tree)))
+
+	# File version and statistics
+	array('I', [1]).tofile(f)
+	array('I', [total_letters, distinct_letters]).tofile(f)
+
+	# Alphabet and letter frequencies
+	array('u', list(frequencies.keys())).tofile(f)
+	array('I', list(frequencies.values())).tofile(f)
+	letter_map = {}
+	i = 0
+	for letter in frequencies.keys():
+		letter_map[letter] = i
+		i += 1
+
+	# Create lists of nodes. First list contains node header, size and offset.
+	# Second list contains all links of all nodes in a consecutive order.
+	rel_pointers = []
+	nodes = []
+	next_node = 0
+	for node in tree:
+		rel_pointers += [(len(node)-1, node[0], next_node)]
+		for link in node[1:]:
+			nodes += [letter_map[link[LETTER]], link[NEXT] & 255, (link[NEXT] >> 8) & 255, (link[NEXT] >> 16) & 255]
+			next_node += 1
+	offset = len(rel_pointers)
+	pointers = []
+	for p in rel_pointers:
+		abs_address = p[2] + offset
+		pointers += [p[0] | (p[1] << 7), abs_address & 255, (abs_address >> 8) & 255, (abs_address >> 16) & 255]
+
+	array('B', pointers).tofile(f)
+	array('B', nodes).tofile(f)
 
 
 def main():
 	if len(sys.argv) < 2:
-		print("Usage: {} <input_file>".format(sys.argv[0]), file=sys.stderr)
+		print("Usage: {} <input_file> [<text_output_file> [<binary_output_file>]]".format(sys.argv[0]), file=sys.stderr)
 		return
+	
+	input_file = sys.argv[1]
+	text_output_file = None
+	binary_output_file = None
+	if len(sys.argv) > 2:
+		text_output_file = sys.argv[2]
+	if len(sys.argv) > 3:
+		binary_output_file = sys.argv[3]
 	
 	source = open(sys.argv[1])
 	tree = [[NOT_COMPLETE]]
@@ -111,12 +163,31 @@ def main():
 		if len(line) < 3:
 			continue
 		add_word(tree, frequencies, line)
+	total_letters = sum(frequencies.values())
 	print("\rWords processed:", counter, file=sys.stderr)
 	print("Tree nodes:", len(tree), file=sys.stderr)
+	
 	print("Now sorting", file=sys.stderr)
 	tree = tidy_tree(tree)
 	print("Tree nodes:", len(tree), file=sys.stderr)
-	dump_tree(tree, frequencies)
+
+	if text_output_file == None or text_output_file == '-':
+		if binary_output_file != None:
+			print("Writing data to standard output")
+			dump_tree_python(tree, frequencies, total_letters, sys.stdout)
+		else:
+			print("Skipping text output")
+	else:
+		print("Writing data to text file", text_output_file)
+		f = open(text_output_file, 'wt')
+		dump_tree_python(tree, frequencies, total_letters, f)
+		f.close()
+	
+	if binary_output_file != None:
+		print("Writing data to binary file", binary_output_file)
+		f = open(binary_output_file, 'wb')
+		dump_tree_binary(tree, frequencies, total_letters, f)
+		f.close()
 
 
 if __name__=='__main__':

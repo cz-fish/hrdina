@@ -27015,7 +27015,6 @@ napovídalo
 napovídaly
 napovídat
 např
-např.
 napracoval
 napřahuješ
 napráskat
@@ -85749,7 +85748,6 @@ produkuje
 produkují
 produkující
 prodyšnými
-prof.
 profese
 profesemi
 profesi
