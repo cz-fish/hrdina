@@ -43,6 +43,8 @@ public class Main {
 		TestWord(tree, "oj");
 		TestWord(tree, "křpch"); */
 		
+//		tree.getAlphabet().Dump();
+		
 		GameBoard board = new GameBoard();
 		board.Init(tree);
 		board.DumpBoard();

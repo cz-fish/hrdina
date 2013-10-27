@@ -2,6 +2,7 @@ package name.fis.hrdina;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.TreeMap;
 
 public class Alphabet {
@@ -14,16 +15,19 @@ public class Alphabet {
 	// Number of letters in all words in the word tree in total
 	// (Used to calculate relative frequency of each letter)
 	private int m_SelectionLimit;
+	private Random m_Rand;
 
 	public Alphabet(int totalLetters, Map<Character, Integer> letterFrequency)
 	{
+		m_Rand = new Random();
 		InitValues(totalLetters, letterFrequency);
 	}
 
 	public char GetRandomLetter()
 	{
-		double pick = Math.random() * m_SelectionLimit;
-		Entry<Integer, Character> pickedEntry = m_Roulette.higherEntry((int)pick);
+		int pick = m_Rand.nextInt(m_SelectionLimit);
+		//double pick = Math.random() * m_SelectionLimit;
+		Entry<Integer, Character> pickedEntry = m_Roulette.higherEntry(pick);
 		if (pickedEntry == null)
 		{
 			// We shouldn't get here. This is a safety fallback
@@ -52,13 +56,13 @@ public class Alphabet {
 			// The less frequent the letter, the more points for it
 			float relFreq = absFreq / (float)totalLetters;
 			int points = 1;
-			if (relFreq < 0.07)
+			if (relFreq < 0.06)
 				points = 2;
-			if (relFreq < 0.04)
+			if (relFreq < 0.03)
 				points = 3;
-			if (relFreq < 0.02)
+			if (relFreq < 0.01)
 				points = 4;
-			if (relFreq < 0.009)
+			if (relFreq < 0.008)
 				points = 5;
 			if (relFreq < 0.004)
 				points = 6;
@@ -68,7 +72,7 @@ public class Alphabet {
 				points = 8;
 			m_Values.put(c, points);
 			
-			// Make more frequent letters twice as much popular
+			// Make more frequent letters more popular
 			if (points < 3)
 				runningLimit += 2 * absFreq;
 			else
@@ -76,5 +80,14 @@ public class Alphabet {
 			m_Roulette.put(runningLimit, c);
 		}
 		m_SelectionLimit = runningLimit;
+	}
+	
+	/* For testing only */
+	public void Dump()
+	{
+		for (char c: m_Values.keySet())
+		{
+			System.out.println(String.format("%c: %d", c, m_Values.get(c)));
+		}
 	}
 }
