@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+from array import array
 
 LETTER = 0
 NEXT = 1
@@ -8,6 +9,7 @@ NEXT = 1
 COMPLETE = 1
 NOT_COMPLETE = 0
 
+#### Word tree ###########################
 def add_word(tree, frequencies, word):
 	"""Adds a single word to the tree and increments letter counters in the
 	frequencies dictionary. The last node of the word will have the complete
@@ -87,23 +89,45 @@ def tidy_tree(tree):
 	return new_tree
 
 
-def dump_tree_python(tree, frequencies, total_letters, f):
-	"""Prints the results to the output file in python dictionary/list format.
-	Nothing clever here."""
+### Digraphs #################################
+def add_digraph(digraphs, c1, c2):
+	if c1 not in digraphs:
+		digraphs[c1] = {c2: 1}
+	else:
+		if c2 not in digraphs[c1]:
+			digraphs[c1][c2] = 1
+		else:
+			digraphs[c1][c2] += 1
+
+#def tidy_digarphs(digraphs):
+#	neigh_list = []
+#	for first, n in digraphs.items():
+#		v = []
+#		for letter, count in n.items():
+#			v += [(letter, count)]
+#		v.sort()
+#		neigh_list += [(first, v)]
+#	neigh_list.sort()
+#	return neigh_list
+
+
+### Text Output ##############################
+def dump_text_alphabet(total_letters, frequencies, f):
 	print(str(total_letters), file=f)
 	print(str(frequencies), file=f)
+
+def dump_text_tree(tree, f):
 	print(str(tree), file=f)
 
+def dump_text_digraphs(digraphs, f):
+	print(str(digraphs), file=f)
 
-def dump_tree_binary(tree, frequencies, total_letters, f):
-	"""Stores the tree in a compact binary format"""
-	from array import array
 
+### Binary Output ############################
+def dump_binary_alphabet(total_letters, frequencies, f):
 	distinct_letters = len(frequencies)
 	if distinct_letters > 128:
 		raise ValueError("Too many distinct letters ({}). At most 128 are supported".format(distinct_letters))
-	if len(tree) > 2**24:
-		raise ValueError("Too many tree nodes ({}). At most 2^24 are supported".format(len(tree)))
 
 	# File version and statistics
 	array('I', [1]).tofile(f)
@@ -117,6 +141,12 @@ def dump_tree_binary(tree, frequencies, total_letters, f):
 	for letter in frequencies.keys():
 		letter_map[letter] = i
 		i += 1
+	
+	return letter_map
+
+def dump_binary_tree(tree, letter_map, f):
+	if len(tree) > 2**24:
+		raise ValueError("Too many tree nodes ({}). At most 2^24 are supported".format(len(tree)))
 
 	# Create lists of nodes. First list contains node header, size and offset.
 	# Second list contains all links of all nodes in a consecutive order.
@@ -137,57 +167,115 @@ def dump_tree_binary(tree, frequencies, total_letters, f):
 	array('B', pointers).tofile(f)
 	array('B', nodes).tofile(f)
 
+def dump_binary_digraphs(digraphs, letter_map, f):
+	# The frequencies of digraphs form a symmetric matrix NxN (where N is the number
+	# of distinct letters). It is sufficient to store just lower triangle.
+	inverse_lettermap = [(p[1],p[0]) for p in letter_map.items()]
+	inverse_lettermap.sort()
+	triangle = []
+	for first in inverse_lettermap:
+		for second in inverse_lettermap:
+			if second[0] > first[0]:
+				break
+			if second[1] not in digraphs[first[1]]:
+				triangle += [0]
+			else:
+				triangle += [digraphs[first[1]][second[1]]]
+	array('I', triangle).tofile(f)
+	
+
+##############################################
+def open_file(name, text_output):
+	if name == '-':
+		return sys.stdout
+	print("Creating {}".format(name), end='', file=sys.stderr)
+	if text_output:
+		return open(name, 'wt')
+	else:
+		return open(name, 'wb')
+
+def close_file(name, f):
+	if name == '-':
+		return
+	print(" ... done", file=sys.stderr)
+	f.close()
 
 def main():
-	if len(sys.argv) < 2:
-		print("Usage: {} <input_file> [<text_output_file> [<binary_output_file>]]".format(sys.argv[0]), file=sys.stderr)
+	if len(sys.argv) < 5:
+		print("Usage: {} [-T] <dict_file> <alphabet_file> <wordtree_file> <digraph_file>".format(sys.argv[0]), file=sys.stderr)
+		print("   -T [optional]          Produce text output instead of binary", file=sys.stderr)
+		print("   <dict_file> [in]       Dictionary of words (one per line) to be processed", file=sys.stderr)
+		print("   <alphabet_file> [out]  Output file for alphabet statistics", file=sys.stderr)
+		print("   <wordtree_file> [out]  Output file for wordtree", file=sys.stderr)
+		print("   <digraph_file> [out]   Output file for digraph statistics", file=sys.stderr)
 		return
 	
-	input_file = sys.argv[1]
-	text_output_file = None
-	binary_output_file = None
-	if len(sys.argv) > 2:
-		text_output_file = sys.argv[2]
-	if len(sys.argv) > 3:
-		binary_output_file = sys.argv[3]
+	text_output = False
+	if (sys.argv[1] == '-T'):
+		text_output = True
+		file_args = sys.argv[2:6]
+	else:
+		file_args = sys.argv[1:5]
+
+	input_file, alphabet_file, wordtree_file, digraph_file = file_args
 	
-	source = open(sys.argv[1])
+	source = open(input_file)
 	tree = [[NOT_COMPLETE]]
 	frequencies = {}
+	digraphs = {}
 	counter = 0
 	for line in source:
 		if counter % 1000 == 0:
 			print("\rWords processed:", counter, file=sys.stderr, end='')
 		counter += 1
+		# sanitize line
 		line = line.strip()
 		if len(line) < 3:
 			continue
+
+		# add word to word tree
 		add_word(tree, frequencies, line)
+
+		# add word to digraph counter
+		for i in range(len(line) - 1):
+			c1 = line[i]
+			c2 = line[i+1]
+			add_digraph(digraphs, c1, c2)
+			add_digraph(digraphs, c2, c1)
+
 	total_letters = sum(frequencies.values())
 	print("\rWords processed:", counter, file=sys.stderr)
 	print("Tree nodes:", len(tree), file=sys.stderr)
 	
 	print("Now sorting", file=sys.stderr)
 	tree = tidy_tree(tree)
+	#neigh_list = tidy_digarphs(digraphs)
 	print("Tree nodes:", len(tree), file=sys.stderr)
 
-	if text_output_file == None or text_output_file == '-':
-		if binary_output_file != None:
-			print("Writing data to standard output", file=sys.stderr)
-			dump_tree_python(tree, frequencies, total_letters, sys.stdout)
-		else:
-			print("Skipping text output", file=sys.stderr)
+	if text_output:
+		f = open_file(alphabet_file, text_output)
+		dump_text_alphabet(total_letters, frequencies, f)
+		close_file(alphabet_file, f)
+		
+		f = open_file(wordtree_file, text_output)
+		dump_text_tree(tree, f)
+		close_file(wordtree_file, f)
+		
+		f = open_file(digraph_file, text_output)
+		dump_text_digraphs(digraphs, f)
+		close_file(digraph_file, f)
 	else:
-		print("Writing data to text file", text_output_file, file=sys.stderr)
-		f = open(text_output_file, 'wt')
-		dump_tree_python(tree, frequencies, total_letters, f)
-		f.close()
-	
-	if binary_output_file != None:
-		print("Writing data to binary file", binary_output_file, file=sys.stderr)
-		f = open(binary_output_file, 'wb')
-		dump_tree_binary(tree, frequencies, total_letters, f)
-		f.close()
+		f = open_file(alphabet_file, text_output)
+		letter_map = dump_binary_alphabet(total_letters, frequencies, f)
+		close_file(alphabet_file, f)
+
+		f = open_file(wordtree_file, text_output)
+		dump_binary_tree(tree, letter_map, f)
+		close_file(wordtree_file, f)
+
+		f = open_file(digraph_file, text_output)
+		dump_binary_digraphs(digraphs, letter_map, f)
+		close_file(digraph_file, f)
 
 
 if __name__=='__main__':
