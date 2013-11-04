@@ -1,5 +1,10 @@
 package name.fis.hrdina;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -12,41 +17,67 @@ public class Alphabet {
 	private TreeMap<Integer, Character> m_Roulette;
 	// Point value of each letter, based on the frequency
 	private Map<Character, Integer> m_Values;
+	// Maps letter index as used in the data files to the actual character
+	private TreeMap<Integer, Character> m_IndexMap;
 	// Number of letters in all words in the word tree in total
 	// (Used to calculate relative frequency of each letter)
 	private int m_SelectionLimit;
-	private Random m_Rand;
+	private final Random m_Rand;
+	
+	public final static int NO_LETTER_INDEX = -1;
+	public final static char NO_LETTER = ' ';
 
-	public Alphabet(int totalLetters, Map<Character, Integer> letterFrequency)
+	public Alphabet()
 	{
 		m_Rand = new Random();
-		InitValues(totalLetters, letterFrequency);
 	}
 
-	public char GetRandomLetter()
+	public boolean Load(InputStream alphabetStr) throws IOException, WordTreeException
 	{
-		int pick = m_Rand.nextInt(m_SelectionLimit);
-		//double pick = Math.random() * m_SelectionLimit;
-		Entry<Integer, Character> pickedEntry = m_Roulette.higherEntry(pick);
-		if (pickedEntry == null)
-		{
-			// We shouldn't get here. This is a safety fallback
-			return m_Roulette.lastEntry().getValue();
+		// Check header
+		int version = Util.ReadLEInt(alphabetStr);
+		if (version > 1) {
+			throw new WordTreeException(String.format("Unsupported wordtree version %d", version));
 		}
-		return pickedEntry.getValue();
+
+		// Unpack alphabet / letter frequencies
+		Map<Character, Integer> letterFreq = new TreeMap<>();
+		int distinctLetters;
+		int totalLetters = Util.ReadLEInt(alphabetStr);
+		distinctLetters = Util.ReadLEInt(alphabetStr);
+
+		byte[] letterData = new byte[distinctLetters * 4];
+		byte[] counterData = new byte[distinctLetters * 4];
+		alphabetStr.read(letterData);
+		alphabetStr.read(counterData);
+
+		Charset charset = Charset.forName("UTF-32LE");
+		char[] letters = charset.decode(ByteBuffer.wrap(letterData)).array();
+		int[] frequencies = new int[distinctLetters];
+		ByteBuffer.wrap(counterData).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(frequencies);
+
+		for (int i = 0; i < distinctLetters; i++) {
+			letterFreq.put(letters[i], frequencies[i]);
+		}
+		
+		InitValues(totalLetters, letterFreq, letters);
+
+		return true;
 	}
 
-	public int GetLetterValue(char letter)
-	{
-		if (!m_Values.containsKey(letter))
-			return 0;
-		return m_Values.get(letter);
-	}
-
-	private void InitValues(int totalLetters, Map<Character, Integer> letterFrequency)
+	private void InitValues(int totalLetters, Map<Character, Integer> letterFrequency, char[] letterOrder)
 	{
 		m_Values = new TreeMap<>();
 		m_Roulette = new TreeMap<>();
+		m_IndexMap = new TreeMap<>();
+		
+		int letterIndex = 0;
+		for (char c: letterOrder)
+		{
+			m_IndexMap.put(letterIndex, c);
+			letterIndex++;
+		}
+		
 		int runningLimit = 0;
 		
 		for (char c: letterFrequency.keySet())
@@ -80,6 +111,73 @@ public class Alphabet {
 			m_Roulette.put(runningLimit, c);
 		}
 		m_SelectionLimit = runningLimit;
+	}
+
+	public int GetSize()
+	{
+		return m_IndexMap.size();
+	}
+
+	// <editor-fold desc="Letter getters">
+	public char GetLetterByIndex(int index)
+	{
+		return m_IndexMap.get(index);
+	}
+	
+	public int GetIndexOfLetter(char letter)
+	{
+		for (Entry<Integer, Character> entry: m_IndexMap.entrySet())
+		{
+			if (entry.getValue() == letter)
+				return entry.getKey();
+		}
+		return NO_LETTER_INDEX;
+	}
+	
+	/// @return one letter with uniform distribution of all letters
+	public char GetRandomLetterUniform()
+	{
+		int pick = m_Rand.nextInt(m_IndexMap.size());
+		return GetLetterByIndex(pick);
+	}
+	
+	/// @return one letter with probabilities weighted by relative letter frequencies
+	public char GetRandomLetterWeighted()
+	{
+		return GetRandomLetterByRoulette(m_Roulette, m_SelectionLimit);
+	}
+	
+	public char GetRandomLetterConditional(TreeMap<Character, Integer> probMap, int probDivider)
+	{
+		TreeMap<Integer, Character> roulette = new TreeMap<>();
+		int accumulator = 0;
+		for (Entry<Character, Integer> e: probMap.entrySet())
+		{
+			accumulator += e.getValue();
+			roulette.put(accumulator, e.getKey());
+		}
+		return GetRandomLetterByRoulette(roulette, probDivider);
+	}
+	
+	private char GetRandomLetterByRoulette(TreeMap<Integer, Character> roulette, int probDivider)
+	{
+		int pick = m_Rand.nextInt(probDivider);
+		Entry<Integer, Character> pickedEntry = roulette.higherEntry(pick);
+		if (pickedEntry == null)
+		{
+			// We shouldn't get here. This is a safety fallback
+			return roulette.lastEntry().getValue();
+		}
+		return pickedEntry.getValue();
+	}
+	// </editor-fold>
+
+	/// @return point value of the given letter
+	public int GetLetterValue(char letter)
+	{
+		if (!m_Values.containsKey(letter))
+			return 0;
+		return m_Values.get(letter);
 	}
 	
 	/* For testing only */

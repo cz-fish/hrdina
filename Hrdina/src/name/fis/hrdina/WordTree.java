@@ -4,7 +4,6 @@ import java.io.*;
 import java.util.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.Charset;
 
 public class WordTree {
 
@@ -63,51 +62,17 @@ public class WordTree {
 	// <editor-fold desc="Private members">
 	// All nodes of the tree. The root node is the 0th element
 	private List<Node> m_Nodes;
-	private Alphabet m_Alphabet;
 	// </editor-fold>
 
 	public WordTree() {
 		m_Nodes = null;
-		m_Alphabet = null;
 	}
 	
-	public Alphabet getAlphabet()
-	{
-		return m_Alphabet;
-	}
-
-	public boolean LoadTree(FileInputStream fstr) throws IOException, WordTreeException {
-		// Check header
-		int version = ReadLEInt(fstr);
-		if (version > 1) {
-			throw new WordTreeException(String.format("Unsupported wordtree file version %d", version));
-		}
-
-		// Unpack alphabet / letter frequencies
-		Map<Character, Integer> letterFreq = new TreeMap<>();
-		int distinctLetters;
-		int totalLetters = ReadLEInt(fstr);
-		distinctLetters = ReadLEInt(fstr);
-
-		byte[] letterData = new byte[distinctLetters * 4];
-		byte[] counterData = new byte[distinctLetters * 4];
-		fstr.read(letterData);
-		fstr.read(counterData);
-
-		Charset charset = Charset.forName("UTF-32LE");
-		char[] letters = charset.decode(ByteBuffer.wrap(letterData)).array();
-		int[] frequencies = new int[distinctLetters];
-		ByteBuffer.wrap(counterData).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(frequencies);
-
-		for (int i = 0; i < distinctLetters; i++) {
-			letterFreq.put(letters[i], frequencies[i]);
-		}
-		
-		m_Alphabet = new Alphabet(totalLetters, letterFreq);
-
-		// Unpack nodes
-		byte[] nodeData = new byte[fstr.available()];
-		fstr.read(nodeData);
+	public boolean Load(InputStream wordTreeStr, Alphabet alphabet)
+		throws IOException, WordTreeException
+	{	
+		byte[] nodeData = new byte[wordTreeStr.available()];
+		wordTreeStr.read(nodeData);
 		int[] nodeValues = new int[nodeData.length / 4];
 		ByteBuffer.wrap(nodeData).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer().get(nodeValues);
 		int numNodes = nodeValues[0] >> 8;
@@ -120,7 +85,7 @@ public class WordTree {
 			Node node = new Node(completeFlag, numChildren);
 			for (int j = 0; j < numChildren; j++) {
 				int letterIndex = nodeValues[nodePointer + j] & 127;
-				char letter = letters[letterIndex];
+				char letter = alphabet.GetLetterByIndex(letterIndex);
 				int dest = nodeValues[nodePointer + j] >> 8;
 				node.AddLink(letter, dest);
 			}
@@ -173,12 +138,4 @@ public class WordTree {
 
 		return result;
 	}
-
-	// <editor-fold desc="Helpers">
-	private int ReadLEInt(FileInputStream fstr) throws IOException {
-		byte[] buf = new byte[4];
-		fstr.read(buf);
-		return (int) buf[0] + ((int) buf[1] << 8) + ((int) buf[2] << 16) + ((int) buf[3] << 24);
-	}
-	// </editor-fold>
 }

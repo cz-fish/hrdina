@@ -1,5 +1,6 @@
 package name.fis.hrdina;
 
+import name.fis.hrdina.generators.IBoardGenerator;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -15,15 +16,11 @@ public class GameBoard {
 		m_Board = new char[SIZE * SIZE];
 	}
 	
-	public void Init(WordTree tree)
+	public void Init(Alphabet alphabet, WordTree wordTree, IBoardGenerator boardGenerator)
 	{
-		m_Tree = tree;
-		m_Alphabet = tree.getAlphabet();
-		// Pick size * size random letters
-		for (int i = 0; i < SIZE * SIZE; i++)
-		{
-			m_Board[i] = m_Alphabet.GetRandomLetter();
-		}
+		m_Alphabet = alphabet;
+		m_Tree = wordTree;
+		m_Board = boardGenerator.GenerateBoard(SIZE);
 	}
 	
 	public List<String> SolveBoard()
