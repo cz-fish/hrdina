@@ -1,5 +1,6 @@
 package name.fis.hrdina;
 import java.io.*;
+import java.util.Collections;
 import java.util.List;
 import name.fis.hrdina.generators.ConditionalProbBoard;
 import name.fis.hrdina.generators.EqualProbBoard;
@@ -68,17 +69,21 @@ public class Main
 		
 		GameBoard board = new GameBoard();
 		
-		IBoardGenerator generator = new EqualProbBoard(alphabet);
+		IBoardGenerator generator;
+		/*
+		// EqualProbBoard is almost always very bad
+		generator = new EqualProbBoard(alphabet);
 		board.Init(alphabet, tree, generator);
-		TestBoard(board, "EqualProb");
+		TestBoard(board, "EqualProb", alphabet);
+		*/
 
 		generator = new WeightedProbBoard(alphabet);
 		board.Init(alphabet, tree, generator);
-		TestBoard(board, "WeightedProb");
+		TestBoard(board, "WeightedProb", alphabet);
 
 		generator = new ConditionalProbBoard(alphabet, digraphs);
 		board.Init(alphabet, tree, generator);
-		TestBoard(board, "ConditionalProb");
+		TestBoard(board, "ConditionalProb", alphabet);
 	}
 	
 	private static void TestWord(WordTree tree, String word)
@@ -88,17 +93,18 @@ public class Main
 		System.out.println(String.format("%s: is word? %s, is prefix? %s", word, r.IsValidWord? "YES":"NO", r.IsPerspectivePrefix? "YES":"NO"));
 	}
 	
-	private static void TestBoard(GameBoard board, String type)
+	private static void TestBoard(GameBoard board, String type, Alphabet alphabet)
 	{
 		System.out.println("*********************");
 		System.out.println(String.format("Board type %s", type));
 		board.DumpBoard();
 		List<String> solutions = board.SolveBoard();
+		Collections.sort(solutions);
 		System.out.println("--------");
 		System.out.println(String.format("Found %d solutions", solutions.size()));
 		for (String s: solutions)
 		{
-			System.out.println(s);
+			System.out.println(String.format("%s (%d)", s, alphabet.GetWordValue(s)));
 		}
 	}
 }

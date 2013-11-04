@@ -147,16 +147,25 @@ public class Alphabet {
 		return GetRandomLetterByRoulette(m_Roulette, m_SelectionLimit);
 	}
 	
-	public char GetRandomLetterConditional(TreeMap<Character, Integer> probMap, int probDivider)
+	public char GetRandomLetterConditional(TreeMap<Character, Integer> probMap)
 	{
 		TreeMap<Integer, Character> roulette = new TreeMap<>();
 		int accumulator = 0;
 		for (Entry<Character, Integer> e: probMap.entrySet())
 		{
-			accumulator += e.getValue();
+			int value = e.getValue();
+			if (value == 0)
+				continue;
+			/**/
+			if (m_Values.get(e.getKey()) < 3)
+			{
+				value *= 2;
+			}
+			/**/
+			accumulator += value;
 			roulette.put(accumulator, e.getKey());
 		}
-		return GetRandomLetterByRoulette(roulette, probDivider);
+		return GetRandomLetterByRoulette(roulette, accumulator);
 	}
 	
 	private char GetRandomLetterByRoulette(TreeMap<Integer, Character> roulette, int probDivider)
@@ -178,6 +187,16 @@ public class Alphabet {
 		if (!m_Values.containsKey(letter))
 			return 0;
 		return m_Values.get(letter);
+	}
+	
+	public int GetWordValue(String word)
+	{
+		int value = 0;
+		for (char c: word.toCharArray())
+		{
+			value += GetLetterValue(c);
+		}
+		return value;
 	}
 	
 	/* For testing only */

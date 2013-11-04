@@ -2,4 +2,5 @@
 *~
 Hrdina/build/
 Hrdina/dist/
-wordlist.bin
+Hrdina/src/name/fis/hrdina/data/*.bin
+Hrdina/nbproject/private/

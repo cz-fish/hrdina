@@ -57,12 +57,8 @@ public class ConditionalProbBoard implements IBoardGenerator
 					}
 				}
 				// TODO: make sure every letter has nonzero probability in the probMap
-				
-				int divider = 0;
-				for (int prob: probMap.values())
-					divider += prob;
-				
-				result[coord] = m_Alphabet.GetRandomLetterConditional(probMap, divider);
+
+				result[coord] = m_Alphabet.GetRandomLetterConditional(probMap);
 			}
 		}
 		
