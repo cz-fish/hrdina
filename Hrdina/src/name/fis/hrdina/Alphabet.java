@@ -11,27 +11,48 @@ import java.util.Random;
 import java.util.TreeMap;
 
 public class Alphabet {
-	// Maps a limit value to a character. It is used in random letter selection.
-	// If the random number falls between two adjacent limits in this map then
-	// the respective letter is returned.
+	/** Maps a limit value to a character. It is used in random letter selection.
+	  * If the random number falls between two adjacent limits in this map then
+	  * the respective letter is returned. */
 	private TreeMap<Integer, Character> m_Roulette;
-	// Point value of each letter, based on the frequency
+	/** Point value of each letter, based on the frequency */
 	private Map<Character, Integer> m_Values;
-	// Maps letter index as used in the data files to the actual character
+	/** Maps letter index as used in the data files to the actual character */
 	private TreeMap<Integer, Character> m_IndexMap;
-	// Number of letters in all words in the word tree in total
-	// (Used to calculate relative frequency of each letter)
+	/** Number of letters in all words in the word tree in total
+	  * (Used to calculate relative frequency of each letter) */
 	private int m_SelectionLimit;
 	private final Random m_Rand;
 	
+	/** Value returned by GetLetterIndex for a nonexistant letter */
 	public final static int NO_LETTER_INDEX = -1;
+	/** Placeholder for a nonexistant letter */
 	public final static char NO_LETTER = ' ';
 
+	/**
+	 * Default constructor, using the Random class as random number generator
+	 */
 	public Alphabet()
 	{
 		m_Rand = new Random();
 	}
 
+	/**
+	 * This overload lets the caller to specify the random number generator
+	 * @param rand Random number generator to use
+	 */
+	public Alphabet(Random rand)
+	{
+		m_Rand = rand;
+	}
+
+	/**
+	 * Initializes the alphabet instance with data from the given input stream
+	 * @param alphabetStr Stream to load alphabet data from
+	 * @return true if loading succeeded; false if it did not
+	 * @throws IOException Problems manipulating the input file
+	 * @throws WordTreeException Data in the input file is invalid
+	 */
 	public boolean Load(InputStream alphabetStr) throws IOException, WordTreeException
 	{
 		// Check header
@@ -65,6 +86,12 @@ public class Alphabet {
 		return true;
 	}
 
+	/**
+	 * Calculates private members from the data loaded from the input stream
+	 * @param totalLetters Total number of all letters in all words
+	 * @param letterFrequency Number of occurencies of each letter
+	 * @param letterOrder Maps letter index to the actual letter
+	 */
 	private void InitValues(int totalLetters, Map<Character, Integer> letterFrequency, char[] letterOrder)
 	{
 		m_Values = new TreeMap<>();
@@ -113,17 +140,32 @@ public class Alphabet {
 		m_SelectionLimit = runningLimit;
 	}
 
+	/**
+	 * @return Number of distinct letters in the alphabet
+	 */
 	public int GetSize()
 	{
 		return m_IndexMap.size();
 	}
 
 	// <editor-fold desc="Letter getters">
+	/**
+	 * @param index Letter index from the input stream
+	 * @return Letter assigned to the given index
+	 */
 	public char GetLetterByIndex(int index)
 	{
+		if (!m_IndexMap.containsKey(index))
+			return NO_LETTER;
 		return m_IndexMap.get(index);
 	}
 	
+	/**
+	 * Maps a letter back to its index used in the input stream.
+	 * Not optimized, performs a linear scan of the alphabet.
+	 * @param letter The letter to convert to its index
+	 * @return Index of the given letter or <code>NO_LETTER_INDEX</code> if not found
+	 */
 	public int GetIndexOfLetter(char letter)
 	{
 		for (Entry<Integer, Character> entry: m_IndexMap.entrySet())
@@ -134,19 +176,27 @@ public class Alphabet {
 		return NO_LETTER_INDEX;
 	}
 	
-	/// @return one letter with uniform distribution of all letters
+	/** @return one letter with uniform distribution of all letters */
 	public char GetRandomLetterUniform()
 	{
 		int pick = m_Rand.nextInt(m_IndexMap.size());
 		return GetLetterByIndex(pick);
 	}
 	
-	/// @return one letter with probabilities weighted by relative letter frequencies
+	/** @return one letter with probabilities weighted by relative letter frequencies */
 	public char GetRandomLetterWeighted()
 	{
 		return GetRandomLetterByRoulette(m_Roulette, m_SelectionLimit);
 	}
 	
+	/**
+	 * Returns a random letter. Each letter has a probability of being picked
+	 * calculated as the ratio between its frequency specified by the <code>probMap</code>
+	 * parameter and the sum of frequencies of all letters. It means that a letter
+	 * that is not in the <code>probMap</code> at all can't be picked.
+	 * @param probMap Letter probability map
+	 * @return one letter with probabilities specified by the given probability map
+	 */
 	public char GetRandomLetterConditional(TreeMap<Character, Integer> probMap)
 	{
 		TreeMap<Integer, Character> roulette = new TreeMap<>();
@@ -156,18 +206,22 @@ public class Alphabet {
 			int value = e.getValue();
 			if (value == 0)
 				continue;
-			/**/
-			if (m_Values.get(e.getKey()) < 3)
-			{
-				value *= 2;
-			}
-			/**/
 			accumulator += value;
 			roulette.put(accumulator, e.getKey());
 		}
 		return GetRandomLetterByRoulette(roulette, accumulator);
 	}
 	
+	/**
+	 * Picks a random letter based on letter probabilities using roulette algorithm.
+	 * Used by <code>GetRandomLetterWeighted</code> and <code>GetRandomLetterConditional</code>.
+	 * A random number between 0 and <code>probDivider</code> is generated. The <code>roulette</code>
+	 * parameter contains keys of an increasing sequence and maps (not necessarilly equally large)
+	 * number intervals to letters.
+	 * @param roulette Letter interval boundaries
+	 * @param probDivider Roulette size
+	 * @return A random letter picked by the roulette
+	 */
 	private char GetRandomLetterByRoulette(TreeMap<Integer, Character> roulette, int probDivider)
 	{
 		int pick = m_Rand.nextInt(probDivider);
@@ -181,7 +235,9 @@ public class Alphabet {
 	}
 	// </editor-fold>
 
-	/// @return point value of the given letter
+	/**
+	 * @param letter A single letter
+	 * @return point value of the given letter */
 	public int GetLetterValue(char letter)
 	{
 		if (!m_Values.containsKey(letter))
@@ -189,6 +245,11 @@ public class Alphabet {
 		return m_Values.get(letter);
 	}
 	
+	/**
+	 * Calculates value of a word as a sum of values of all its letters
+	 * @param word The word
+	 * @return The word's point value
+	 */
 	public int GetWordValue(String word)
 	{
 		int value = 0;
