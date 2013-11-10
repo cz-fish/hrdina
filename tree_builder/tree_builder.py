@@ -99,17 +99,6 @@ def add_digraph(digraphs, c1, c2):
 		else:
 			digraphs[c1][c2] += 1
 
-#def tidy_digarphs(digraphs):
-#	neigh_list = []
-#	for first, n in digraphs.items():
-#		v = []
-#		for letter, count in n.items():
-#			v += [(letter, count)]
-#		v.sort()
-#		neigh_list += [(first, v)]
-#	neigh_list.sort()
-#	return neigh_list
-
 
 ### Text Output ##############################
 def dump_text_alphabet(total_letters, frequencies, f):
@@ -249,7 +238,6 @@ def main():
 	
 	print("Now sorting", file=sys.stderr)
 	tree = tidy_tree(tree)
-	#neigh_list = tidy_digarphs(digraphs)
 	print("Tree nodes:", len(tree), file=sys.stderr)
 
 	if text_output:
