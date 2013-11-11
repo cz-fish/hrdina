@@ -1,0 +1,6 @@
+.*.sw?
+*~
+Hrdina/build/
+Hrdina/dist/
+Hrdina/src/name/fis/hrdina/data/*.bin
+Hrdina/nbproject/private/

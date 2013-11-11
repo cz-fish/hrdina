@@ -1,0 +1,4 @@
+1. 'ch' as one letter (beware, not all 'c' and 'h' pairs are 'ch')
+2. ConditionalProbBoard generated from the corners (not from the middle)
+3. Board generated so that every letter is at least in 2 words
+4. Game variant without diacritics (all letters on board will be without diacritics, but each letter would also match all its variants with diacritics)
