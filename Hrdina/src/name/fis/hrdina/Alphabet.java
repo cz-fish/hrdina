@@ -10,6 +10,12 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.TreeMap;
 
+/**
+ * Manages the alphabet used by the game. The alphabet is loaded from a resource
+ * file. This class is mostly responsible for generating random letters to form
+ * a game board and for scoring.
+ * @author Filip Simek <filip@fis.name>
+ */
 public class Alphabet {
 	/** Maps a limit value to a character. It is used in random letter selection.
 	  * If the random number falls between two adjacent limits in this map then

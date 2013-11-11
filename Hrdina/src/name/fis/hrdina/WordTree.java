@@ -5,14 +5,20 @@ import java.util.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+/**
+ * Search tree containing only and all valid words.
+ * @author Filip Simek <filip@fis.name>
+ */
 public class WordTree {
 
 	// <editor-fold desc="Nested classes">
+	/** A node of the search tree */
 	private class Node {
-
+		/** Link to a single sub-node for a single letter */
 		private class Link {
-
+			/** The letter to which the link belongs */
 			public char Letter;
+			/** Reference to the sub-node */
 			public int NextNode;
 
 			public Link(char letter, int nextNode) {
@@ -21,22 +27,40 @@ public class WordTree {
 			}
 		}
 
+		/** Complete word flag. If true, this node represents a complete word */
 		private final boolean m_Complete;
+		/** List of links to subnodes for all valid next letters */
 		private final List<Link> m_Links;
 
+		/**
+		 * Creates the node
+		 * @param complete Set to true if this node represents a complete word; use false otherwise
+		 * @param numChildren Number of children that this node will have
+		 */
 		public Node(boolean complete, int numChildren) {
 			m_Complete = complete;
 			m_Links = new ArrayList<>(numChildren);
 		}
 
+		/**
+		 * Add a child node (link) to the node
+		 * @param letter The letter to which the link belongs
+		 * @param dest Index of the child node
+		 */
 		public void AddLink(char letter, int dest) {
 			m_Links.add(new Link(letter, dest));
 		}
 
+		/** @return True if this node represents a complete word. False otherwise */
 		public boolean getComplete() {
 			return m_Complete;
 		}
 
+		/**
+		 * Returns index of the child node for the given letter
+		 * @param letter The next letter of the word
+		 * @return Index of the child node for the given letter
+		 */
 		public int getNext(char letter) {
 			for (Link l : m_Links) {
 				if (l.Letter == letter)
@@ -46,9 +70,12 @@ public class WordTree {
 		}
 	}
 
+	/** Tuple used as a result of the <code>CheckWord</code> method */
 	public class WordSearchResult {
-
+		/** If true, the string was a perspective prefix (i.e. can be prolonged
+		 * to a valid word by appending some letters) */
 		public boolean IsPerspectivePrefix;
+		/** If true, the string was a valid word */
 		public boolean IsValidWord;
 
 		public WordSearchResult() {
@@ -56,20 +83,26 @@ public class WordTree {
 			IsValidWord = false;
 		}
 	}
-	
 	// </editor-fold>
 
 	// <editor-fold desc="Private members">
-	// All nodes of the tree. The root node is the 0th element
+	/** All nodes of the tree. The root node is the 0th element */
 	private List<Node> m_Nodes;
 	// </editor-fold>
 
 	public WordTree() {
 		m_Nodes = null;
 	}
-	
+
+	/**
+	 * Initializes the wordtree with data from the given input stream
+	 * @param wordTreeStr The input stream to read from
+	 * @param alphabet Alphabet associated with the wordtree (needed to decode letters)
+	 * @return true if the loading succeeded; false if it did not
+	 * @throws IOException if there was a problem with input file manipulation
+	 */
 	public boolean Load(InputStream wordTreeStr, Alphabet alphabet)
-		throws IOException, WordTreeException
+		throws IOException
 	{	
 		byte[] nodeData = new byte[wordTreeStr.available()];
 		wordTreeStr.read(nodeData);
@@ -94,6 +127,11 @@ public class WordTree {
 		return true;
 	}
 
+	/**
+	 * Checks, whether the given string is a valid word or prefix of a word.
+	 * @param word The string to be checked
+	 * @return A tuple telling, whether the string was a word or a prefix (or neither or both)
+	 */
 	public WordSearchResult CheckWord(String word) {
 		WordSearchResult result = new WordSearchResult();
 
@@ -103,7 +141,7 @@ public class WordTree {
 		for (char c : word.toCharArray()) {
 			if (currentNode == 0 && !wordStart) {
 				// We mustn't visit node 0 except for the very start of the search.
-				// If we do visit it here again it means that the prefix up to the
+				// If we do visit it here again, it means that the prefix up to the
 				// current letter was a valid word, but appending character c makes
 				// it an invalid word or prefix
 				return result;

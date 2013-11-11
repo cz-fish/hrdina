@@ -2,6 +2,12 @@ package name.fis.hrdina.generators;
 
 import name.fis.hrdina.Alphabet;
 
+/**
+ * Simple board genertor strategy. Each letter on the board is picked completely
+ * at random and each letter has an equal probability of being picked, regardless
+ * of its neighbourhood or letter frequency statistics.
+ * @author Filip Simek <filip@fis.name>
+ */
 public class EqualProbBoard implements IBoardGenerator
 {
 	private final Alphabet m_Alphabet;

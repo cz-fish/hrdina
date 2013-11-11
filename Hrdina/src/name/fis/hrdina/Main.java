@@ -7,13 +7,22 @@ import name.fis.hrdina.generators.EqualProbBoard;
 import name.fis.hrdina.generators.IBoardGenerator;
 import name.fis.hrdina.generators.WeightedProbBoard;
 
+/**
+ * Contains the program entry point
+ * @author Filip Simek <filip@fis.name>
+ */
 public class Main
 {
+	/** Name of the resource to load the alphabet from */
 	private static final String ALPHABET_FILE_NAME = "alphabet.bin";
+	/** Name of the resource to load the wordtree from */
 	private static final String WORDTREE_FILE_NAME = "wordtree.bin";
+	/** Name of the resource to load the digraph statistics from */
 	private static final String DIGRAPH_FILE_NAME = "digraph.bin";
+	
 	/**
-	 * @param args
+	 * Program entry point
+	 * @param args Program arguments
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException
@@ -86,6 +95,7 @@ public class Main
 		TestBoard(board, "ConditionalProb", alphabet);
 	}
 	
+	//<editor-fold desc="debugging">
 	private static void TestWord(WordTree tree, String word)
 	{
 		WordTree.WordSearchResult r;
@@ -107,4 +117,5 @@ public class Main
 			System.out.println(String.format("%s (%d)", s, alphabet.GetWordValue(s)));
 		}
 	}
+	//</editor-fold>
 }

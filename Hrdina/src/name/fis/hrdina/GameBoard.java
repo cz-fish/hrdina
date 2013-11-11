@@ -5,17 +5,36 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+/**
+ * The game board. It is currently always assumed to be square.
+ * Consists of NxN letters. It is able to solve itself (find all valid words
+ * that it contains) for reference.
+ * @author Filip Simek <filip@fis.name>
+ */
 public class GameBoard {
+	/** Size of the edge of the board */
 	private final int SIZE = 4;
+	/** Board contents, i.e. SIZExSIZE letters */
 	private char[] m_Board;
+	/** WordTree used for word validation */
 	private WordTree m_Tree;
+	/** Alphabet that generates the letters for the board */
 	private Alphabet m_Alphabet;
 	
+	/**
+	 * Creates a new, uninitialized board
+	 */
 	public GameBoard()
 	{
 		m_Board = new char[SIZE * SIZE];
 	}
 	
+	/**
+	 * Generates a random board
+	 * @param alphabet The alphabet providing random letters
+	 * @param wordTree WordTree used for checking valid words
+	 * @param boardGenerator Board generation strategy
+	 */
 	public void Init(Alphabet alphabet, WordTree wordTree, IBoardGenerator boardGenerator)
 	{
 		m_Alphabet = alphabet;
@@ -23,6 +42,10 @@ public class GameBoard {
 		m_Board = boardGenerator.GenerateBoard(SIZE);
 	}
 	
+	/**
+	 * Solves the board, i.e. finds all valid words that the board contains
+	 * @return List of all unique valid words on the board
+	 */
 	public List<String> SolveBoard()
 	{
 		HashSet<String> hs = new HashSet<>();
@@ -40,6 +63,15 @@ public class GameBoard {
 		return result;
 	}
 	
+	/**
+	 * Recursive step of the valid word search
+	 * @param position Position of the next letter to be visited
+	 * @param wordSoFar The prefix of the word built so far
+	 * @param visited For each letter of the board, true signals that that letter
+	 *        was already used and can't be used again
+	 * @return Set of all valid words that were found from the starting point
+	 *         determined by the parameters.
+	 */
 	private HashSet<String> ContinueSolvingFrom(int position, String wordSoFar, boolean []visited)
 	{
 		HashSet<String> result = new HashSet<>();
@@ -76,6 +108,12 @@ public class GameBoard {
 		return result;
 	}
 	
+	/**
+	 * For the given board position, determines whether the other position is its neighbor or not
+	 * @param position First position
+	 * @param neighbor Second position; proposed neighbor
+	 * @return true if the two positions are neighbors on the board; false if they are not
+	 */
 	private boolean IsNeighborValid(int position, int neighbor)
 	{
 		if (neighbor < 0 || neighbor >= SIZE * SIZE)

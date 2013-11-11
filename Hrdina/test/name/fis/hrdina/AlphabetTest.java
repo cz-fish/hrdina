@@ -177,6 +177,23 @@ public class AlphabetTest {
 	}
 
 	/**
+	 * Tests GetRandomLetterConditional if some of the probabilities are zero
+	 */
+	@Test
+	public void testGetRandomLetterConditionalZeroProb() {
+		System.out.println("GetRandomLetterConditional");
+		TreeMap<Character, Integer> map = new TreeMap<>();
+		map.put('a', 5);
+		map.put('b', 0);
+		map.put('c', 0);
+		assertEquals('a', instance.GetRandomLetterConditional(map));
+		assertEquals('a', instance.GetRandomLetterConditional(map));
+		assertEquals('a', instance.GetRandomLetterConditional(map));
+		assertEquals('a', instance.GetRandomLetterConditional(map));
+		assertEquals('a', instance.GetRandomLetterConditional(map));
+	}
+
+	/**
 	 * Test of GetLetterValue method, of class Alphabet.
 	 */
 	@Test
