@@ -51,9 +51,9 @@ class GameBoard:
 		if neighbor < 0 or neighbor >= SIZE * SIZE:
 			return False
 		px = position % SIZE
-		py = position / SIZE
+		py = position // SIZE
 		nx = neighbor % SIZE
-		ny = neighbor / SIZE
+		ny = neighbor // SIZE
 		if abs(px-nx) > 1 or abs(py-ny) > 1:
 			return False
 
