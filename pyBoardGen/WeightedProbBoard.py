@@ -1,11 +1,23 @@
+from GameBoard import GameBoard
+
 class WeightedProbBoard:
-	def __init__(self, alphabet):
-		self._alphabet = alphabet
-	
-	def GenerateBoard(self, edgeSize):
+	@staticmethod
+	def GenerateBoard(edgeSize, alphabet, wordTree, digraphs):
 		boardSize = edgeSize * edgeSize
 		result = []
+		lettersUsed = {}
 		for i in range(boardSize):
-			result += [self._alphabet.GetRandomLetterWeighted()]
-		return result
+			letter = alphabet.GetRandomLetterWeighted()
+
+			# prevent any letter from being used more than twice on a board to improve diversity
+			while letter in lettersUsed and lettersUsed[letter] >= 2:
+				letter = alphabet.GetRandomLetterWeighted()
+
+			if letter in lettersUsed:
+				lettersUsed[letter] += 1
+			else:
+				lettersUsed[letter] = 1
+			result += [letter]
+
+		return GameBoard(result, alphabet, wordTree)
 

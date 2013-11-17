@@ -3,3 +3,4 @@
 3. Board generated so that every letter is at least in 2 words
 4. Game variant without diacritics (all letters on board will be without diacritics, but each letter would also match all its variants with diacritics)
 5. In tree_builder, prevent the same word from being added repeatedly. The tree isn't affected by duplicate words, however the letter frequencies and digraph statistics are 
+6. In tree_builder, nodes that have the exact same data could be united. That in turn might make their predecessors identical, so repeat the process as long as meaningful. This might shrink the wordtree a little bit with no impact on correctness or speed.

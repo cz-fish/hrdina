@@ -4,48 +4,34 @@ from Alphabet import Alphabet
 SIZE = 4
 
 class GameBoard:
-	def __init__(self):
-		self._board = [Alphabet.NO_LETTER] * SIZE * SIZE
-		self._words = set()
-		self._utilization = [0] * SIZE * SIZE
-		self._coordLists = []
-	
-	def Init(self, alphabet, wordTree, boardGenerator):
+	def __init__(self, boardLetters, alphabet, wordTree):
+		self.Board = boardLetters
 		self._alphabet = alphabet
 		self._wordTree = wordTree
-		self._board = boardGenerator.GenerateBoard(SIZE)
+
+		self.SolveBoard()
 	
 	def SolveBoard(self):
-		self._words = set()
-		self._coordLists = []
+		self.Words = set()
+		self.LetterChains = []
 		for i in range(SIZE * SIZE):
 			visited = [False] * SIZE * SIZE
 			visited[i] = True
-			self._words |= self.ContinueSolvingFrom(i, self._board[i], visited, [i])
+			self.ContinueSolvingFrom(i, self.Board[i], visited, [i])
 
-		self._utilization = [0] * SIZE * SIZE
-		for chain in self._coordLists:
+		self.Utilization = [0] * SIZE * SIZE
+		for chain in self.LetterChains:
 			for pos in chain:
-				self._utilization[pos] += 1
-	
-	def GetBoard(self):
-		return self._board
-		
-	def GetWords(self):
-		return self._words
-	
-	def GetCoordLists(self):
-		return self._coordLists
-
-	def GetUtilization(self):
-		return self._utilization
+				self.Utilization[pos] += 1
 	
 	def ContinueSolvingFrom(self, position, wordSoFar, visited, coordChain):
 		result = set()
 		isPrefix, isWord = self._wordTree.CheckWord(wordSoFar)
 		if isWord:
-			result.add(wordSoFar)
-			self._coordLists += [coordChain]
+			# only include the word the first time it is found
+			if wordSoFar not in self.Words:
+				self.Words.add(wordSoFar)
+				self.LetterChains += [coordChain]
 
 		if isPrefix:
 			neighbors = [
@@ -60,13 +46,11 @@ class GameBoard:
 			]
 
 			for i in neighbors:
-				if (not self.IsNeighborValid(position, i)) or visited[i]:
+				if (not self.IsNeighborValid(position, i)) or visited[i] or self.Board[i] == Alphabet.NO_LETTER:
 					continue
 				visited[i] = True
-				result |= self.ContinueSolvingFrom(i, wordSoFar + self._board[i], visited, coordChain + [i])
+				self.ContinueSolvingFrom(i, wordSoFar + self.Board[i], visited, coordChain + [i])
 				visited[i] = False
-
-		return result
 	
 	def IsNeighborValid(self, position, neighbor):
 		if neighbor < 0 or neighbor >= SIZE * SIZE:
@@ -85,14 +69,14 @@ class GameBoard:
 		for i in range(0, SIZE * SIZE, SIZE):
 			for j in range(SIZE):
 				print('{} {}; '.format(
-					self._board[i+j],
-					self._alphabet.GetLetterValue(self._board[i+j])
+					self.Board[i+j],
+					self._alphabet.GetLetterValue(self.Board[i+j])
 					), end='')
 			print('')
 
 		print ("-------")
 		for i in range(0, SIZE * SIZE, SIZE):
 			for j in range(SIZE):
-				print('{:2} '.format(self._utilization[i+j]), end='')
+				print('{:2} '.format(self.Utilization[i+j]), end='')
 			print('')
 

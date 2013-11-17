@@ -2,8 +2,11 @@
 
 from Alphabet import Alphabet
 from WordTree import WordTree
+from Digraphs import Digraphs
 from GameBoard import GameBoard
+from GameBoard import SIZE
 from WeightedProbBoard import WeightedProbBoard
+from TwoWordBoard import TwoWordBoard
 import sys
 
 ALPHA_FILE = 'data/alphabet.bin'
@@ -25,28 +28,34 @@ class BoardGen:
 		self._tree = WordTree()
 		self._tree.Load(treeFile, self._alpha)
 		treeFile.close()
+
+		print("Loading digraphs")
+		sys.stdout.flush()
+		digraphFile = open(DIGRAPH_FILE, 'rb')
+		self._digraph = Digraphs()
+		self._digraph.Load(digraphFile, self._alpha)
+		digraphFile.close()
+
 		print("Loaded")
 		sys.stdout.flush()
 
 	def GenerateBoard(self):
-		boardGen = WeightedProbBoard(self._alpha)
-		board = GameBoard()
-		board.Init(self._alpha, self._tree, boardGen)
+		#board = WeightedProbBoard.GenerateBoard(SIZE, self._alpha, self._tree, self._digraph)
+		board = TwoWordBoard.GenerateBoard(SIZE, self._alpha, self._tree, self._digraph)
 		return board
 
 	def TestBoard(self, board):
-		board.SolveBoard()
 		board.Dump()
-		sol = board.GetWords()
+		sol = board.Words
 		solList = [s for s in sol]
 		solList.sort()
 		print("-- {} solutions ----".format(len(solList)))
 		for s in solList:
 			print(" {} ({} pts)".format(s, self._alpha.GetWordValue(s)))
 
-		coordLists = board.GetCoordLists()
+		coordLists = board.LetterChains
 		print('-- {} lists ----'.format(len(coordLists)))
-		brdLetters = board.GetBoard()
+		brdLetters = board.Board
 		for l in coordLists:
 			word = ''
 			for pos in l:
