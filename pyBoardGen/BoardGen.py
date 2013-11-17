@@ -35,13 +35,23 @@ class BoardGen:
 		return board
 
 	def TestBoard(self, board):
+		board.SolveBoard()
 		board.Dump()
-		sol = board.SolveBoard()
+		sol = board.GetWords()
 		solList = [s for s in sol]
 		solList.sort()
 		print("-- {} solutions ----".format(len(solList)))
 		for s in solList:
 			print(" {} ({} pts)".format(s, self._alpha.GetWordValue(s)))
+
+		coordLists = board.GetCoordLists()
+		print('-- {} lists ----'.format(len(coordLists)))
+		brdLetters = board.GetBoard()
+		for l in coordLists:
+			word = ''
+			for pos in l:
+				word += brdLetters[pos]
+			print('{} {}'.format(str(l), word))
 
 
 if __name__ == '__main__':
