@@ -1,5 +1,6 @@
 .*.sw?
 *~
+*.pyc
 Hrdina/build/
 Hrdina/dist/
 Hrdina/src/name/fis/hrdina/data/*.bin

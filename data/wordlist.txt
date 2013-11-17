@@ -15251,7 +15251,6 @@ aspirováním
 aspirováními
 aspirovat
 aspoň
-asř
 assembler
 assemblerem
 assemblerovské
@@ -77924,7 +77923,6 @@ pneumatikou
 pneumatiku
 pneumatiky
 pnoucí
-pns
 pnutí
 pnutím
 př
@@ -91875,6 +91873,7 @@ rešeršní
 řešitelův
 řešiti
 řešme
+resort
 resortech
 resortně
 resortních
@@ -91885,7 +91884,6 @@ resortnímu
 resortu
 resortům
 resorty
-resp
 respekt
 respektive
 respektoval
@@ -104064,9 +104062,6 @@ snování
 snováním
 snovým
 snožmo
-snp
-snr
-sntl
 snu
 snubní
 šňůra

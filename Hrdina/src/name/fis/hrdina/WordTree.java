@@ -103,7 +103,9 @@ public class WordTree {
 	 */
 	public boolean Load(InputStream wordTreeStr, Alphabet alphabet)
 		throws IOException
-	{	
+	{
+		byte[] countersData = new byte[8]; // number of pointers and nodes - two 32bit ints
+		wordTreeStr.read(countersData); // just read and ignore
 		byte[] nodeData = new byte[wordTreeStr.available()];
 		wordTreeStr.read(nodeData);
 		int[] nodeValues = new int[nodeData.length / 4];

@@ -153,6 +153,7 @@ def dump_binary_tree(tree, letter_map, f):
 		abs_address = p[2] + offset
 		pointers += [p[0] | (p[1] << 7), abs_address & 255, (abs_address >> 8) & 255, (abs_address >> 16) & 255]
 
+	array('I', [len(pointers)>>2, len(nodes)>>2]).tofile(f)
 	array('B', pointers).tofile(f)
 	array('B', nodes).tofile(f)
 
